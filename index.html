@@ -1,0 +1,625 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+    <title>PrediCAL | Postoperative Hypocalcemia Clinical Risk Predictor</title>
+    
+    <!-- Mobile App & PWA Meta Tags (iOS & Android) -->
+    <meta name="theme-color" content="#2563eb">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="default">
+    <meta name="apple-mobile-web-app-title" content="PrediCAL">
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="format-detection" content="telephone=no">
+
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Outfit:wght@500;600;700;800&display=swap" rel="stylesheet">
+    
+    <style>
+        * {
+            -webkit-tap-highlight-color: transparent;
+            touch-action: manipulation;
+        }
+
+        body { 
+            font-family: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; 
+            background: linear-gradient(135deg, #f8fafc 0%, #edf2f7 100%);
+            color: #0f172a;
+            padding-bottom: env(safe-area-inset-bottom, 16px);
+        }
+        
+        h1, h2, h3, h4, .font-display { 
+            font-family: 'Outfit', sans-serif; 
+        }
+
+        .glass-card {
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            border: 1px solid rgba(226, 232, 240, 0.9);
+            box-shadow: 0 10px 30px -5px rgba(15, 23, 42, 0.05), 0 4px 12px -2px rgba(15, 23, 42, 0.03);
+        }
+
+        .input-card {
+            background: #ffffff;
+            border: 1px solid #cbd5e1;
+            transition: all 0.2s ease;
+        }
+        .input-card:focus-within {
+            border-color: #2563eb;
+            box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.15);
+        }
+
+        /* 
+           CRITICAL FOR iOS: 
+           Font size MUST be >= 16px on inputs to prevent iOS Safari auto-zooming!
+        */
+        input, select {
+            font-size: 16px !important;
+        }
+
+        /* High-Definition Radial SVG Gauge */
+        .gauge-svg {
+            transform: rotate(-90deg);
+            transform-origin: 50% 50%;
+        }
+
+        .segment-btn {
+            min-height: 40px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            touch-action: manipulation;
+        }
+        .segment-btn.active {
+            background-color: #2563eb;
+            color: #ffffff;
+            font-weight: 700;
+            box-shadow: 0 2px 6px rgba(37, 99, 235, 0.3);
+        }
+
+        @media print {
+            body { background: #ffffff; }
+            .no-print { display: none !important; }
+            .glass-card { box-shadow: none; border: 1px solid #cbd5e1; }
+        }
+    </style>
+</head>
+<body class="min-h-screen flex flex-col justify-between py-2 sm:py-4 px-3 sm:px-6">
+
+    <!-- Top Header & Clinical Purpose Bar -->
+    <header class="max-w-6xl mx-auto w-full mb-2.5 no-print">
+        <div class="glass-card rounded-2xl p-3.5 sm:p-4 flex flex-col md:flex-row md:items-center justify-between gap-2.5">
+            <div class="flex items-start sm:items-center space-x-3">
+                <div class="w-10 h-10 rounded-xl bg-gradient-to-tr from-blue-700 to-indigo-600 flex items-center justify-center text-white shadow-md shadow-blue-500/20 flex-shrink-0 mt-0.5 sm:mt-0">
+                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.2" d="M19.428 15.428a2 2 0 00-1.022-.547l-2.387-.477a6 6 0 00-3.86.517l-.318.158a6 6 0 01-3.86.517L6.05 15.21a2 2 0 00-1.806.547M8 4h8l-1 1v5.172a2 2 0 00.586 1.414l5 5c1.26 1.26.367 3.414-1.415 3.414H4.828c-1.782 0-2.674-2.154-1.414-3.414l5-5A2 2 0 009 10.172V5L8 4z"></path></svg>
+                </div>
+                <div>
+                    <div class="flex items-center space-x-2">
+                        <h1 class="text-lg sm:text-xl font-bold tracking-tight text-slate-900 font-display">PrediCAL <span class="text-blue-600 font-extrabold">– AI</span></h1>
+                        <span class="text-[10px] sm:text-[11px] font-bold text-blue-700 bg-blue-50 border border-blue-200 px-2 py-0.5 rounded-full">
+                            Decision Support
+                        </span>
+                    </div>
+                    <p class="text-xs text-slate-600 font-medium leading-snug mt-0.5">
+                        Predicts statistical probability of postoperative hypocalcemia & Hungry Bone Syndrome in PHPT to guide safe ambulatory discharge vs. calcium supplementation.
+                    </p>
+                </div>
+            </div>
+
+            <div class="flex items-center justify-between sm:justify-end space-x-2 pt-2 sm:pt-0 border-t sm:border-t-0 border-slate-100 flex-shrink-0">
+                <span class="inline-flex items-center text-xs font-semibold text-slate-600 bg-slate-100 px-2.5 py-1 rounded-lg border border-slate-200">
+                    <span class="w-2 h-2 rounded-full bg-emerald-500 mr-1.5 animate-pulse"></span>
+                    8 Variables
+                </span>
+                <button type="button" onclick="toggleModal('info-modal')" class="text-xs font-semibold text-blue-600 hover:text-blue-800 bg-blue-50 hover:bg-blue-100 px-2.5 py-1 rounded-lg border border-blue-200 transition">
+                    Study Evidence
+                </button>
+            </div>
+        </div>
+    </header>
+
+    <!-- Main Workspace (Desktop Side-by-Side, Mobile Stack) -->
+    <main class="max-w-6xl mx-auto w-full flex-grow flex items-center">
+        <div class="grid grid-cols-1 lg:grid-cols-12 gap-3.5 sm:gap-4 w-full">
+            
+            <!-- Left Column: The 8 Variables (7 cols) -->
+            <div class="lg:col-span-7">
+                <div class="glass-card rounded-2xl p-4 sm:p-5 flex flex-col justify-between h-full">
+                    
+                    <!-- Presets Header -->
+                    <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-2 pb-2.5 mb-2.5 border-b border-slate-100">
+                        <div>
+                            <h2 class="text-sm font-bold text-slate-800 tracking-wide uppercase font-display flex items-center gap-1.5">
+                                <span class="w-2 h-2 rounded-full bg-blue-600"></span>
+                                Clinical Variables (8)
+                            </h2>
+                            <p class="text-[11px] text-slate-500">Enter patient values or tap a quick sample preset</p>
+                        </div>
+                        
+                        <!-- Quick Case Presets (Thumb-friendly on mobile) -->
+                        <div class="flex items-center space-x-1.5 self-start sm:self-auto">
+                            <span class="text-[10px] font-semibold text-slate-400 uppercase mr-0.5">Presets:</span>
+                            <button type="button" onclick="setPreset('mild')" class="px-2.5 py-1 text-xs font-bold rounded-lg bg-emerald-50 text-emerald-700 hover:bg-emerald-100 active:bg-emerald-200 border border-emerald-200 transition flex items-center gap-1">
+                                <span class="w-1.5 h-1.5 rounded-full bg-emerald-500"></span> Mild
+                            </button>
+                            <button type="button" onclick="setPreset('mod')" class="px-2.5 py-1 text-xs font-bold rounded-lg bg-amber-50 text-amber-700 hover:bg-amber-100 active:bg-amber-200 border border-amber-200 transition flex items-center gap-1">
+                                <span class="w-1.5 h-1.5 rounded-full bg-amber-500"></span> Mod
+                            </button>
+                            <button type="button" onclick="setPreset('sev')" class="px-2.5 py-1 text-xs font-bold rounded-lg bg-red-50 text-red-700 hover:bg-red-100 active:bg-red-200 border border-red-200 transition flex items-center gap-1">
+                                <span class="w-1.5 h-1.5 rounded-full bg-red-500"></span> Severe
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- The 8 Variables Grid -->
+                    <form id="predical-form" class="space-y-3">
+                        <div class="grid grid-cols-1 sm:grid-cols-2 gap-2.5 sm:gap-3">
+                            
+                            <!-- 1. Pre-op Calcium -->
+                            <div class="input-card rounded-xl p-2.5">
+                                <div class="flex items-center justify-between text-xs font-semibold text-slate-700 mb-1">
+                                    <span class="flex items-center gap-1">
+                                        <svg class="w-3.5 h-3.5 text-blue-500 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19.428 15.428a2 2 0 00-1.022-.547l-2.387-.477a6 6 0 00-3.86.517l-.318.158a6 6 0 01-3.86.517L6.05 15.21a2 2 0 00-1.806.547M8 4h8l-1 1v5.172a2 2 0 00.586 1.414l5 5c1.26 1.26.367 3.414-1.415 3.414H4.828c-1.782 0-2.674-2.154-1.414-3.414l5-5A2 2 0 009 10.172V5L8 4z"></path></svg>
+                                        Pre-op Calcium
+                                    </span>
+                                    <span class="text-[10px] text-slate-400">8.5 – 10.5</span>
+                                </div>
+                                <div class="relative flex items-center">
+                                    <input type="number" step="0.01" inputmode="decimal" id="CA" required placeholder="12.2" class="w-full bg-slate-50/90 rounded-lg px-3 py-2 text-base font-bold text-slate-900 focus:bg-white focus:outline-none pr-14">
+                                    <span class="absolute right-2.5 text-xs font-bold text-slate-400 pointer-events-none">mg/dL</span>
+                                </div>
+                            </div>
+
+                            <!-- 2. Inorganic Phosphorus -->
+                            <div class="input-card rounded-xl p-2.5">
+                                <div class="flex items-center justify-between text-xs font-semibold text-slate-700 mb-1">
+                                    <span class="flex items-center gap-1">
+                                        <svg class="w-3.5 h-3.5 text-indigo-500 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"></path></svg>
+                                        Inorganic Phosphorus
+                                    </span>
+                                    <span class="text-[10px] text-slate-400">2.5 – 4.5</span>
+                                </div>
+                                <div class="relative flex items-center">
+                                    <input type="number" step="0.01" inputmode="decimal" id="PHOSPHORUS" required placeholder="2.34" class="w-full bg-slate-50/90 rounded-lg px-3 py-2 text-base font-bold text-slate-900 focus:bg-white focus:outline-none pr-14">
+                                    <span class="absolute right-2.5 text-xs font-bold text-slate-400 pointer-events-none">mg/dL</span>
+                                </div>
+                            </div>
+
+                            <!-- 3. Pre-op PTH -->
+                            <div class="input-card rounded-xl p-2.5">
+                                <div class="flex items-center justify-between text-xs font-semibold text-slate-700 mb-1">
+                                    <span class="flex items-center gap-1">
+                                        <svg class="w-3.5 h-3.5 text-amber-500 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"></path></svg>
+                                        Pre-op Intact PTH
+                                    </span>
+                                    <span class="text-[10px] text-slate-400">15 – 65</span>
+                                </div>
+                                <div class="relative flex items-center">
+                                    <input type="number" step="0.1" inputmode="decimal" id="PTH" required placeholder="270.4" class="w-full bg-slate-50/90 rounded-lg px-3 py-2 text-base font-bold text-slate-900 focus:bg-white focus:outline-none pr-14">
+                                    <span class="absolute right-2.5 text-xs font-bold text-slate-400 pointer-events-none">pg/mL</span>
+                                </div>
+                            </div>
+
+                            <!-- 4. Total ALP -->
+                            <div class="input-card rounded-xl p-2.5">
+                                <div class="flex items-center justify-between text-xs font-semibold text-slate-700 mb-1">
+                                    <span class="flex items-center gap-1">
+                                        <svg class="w-3.5 h-3.5 text-rose-500 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"></path></svg>
+                                        Total ALP
+                                    </span>
+                                    <span class="text-[10px] text-slate-400">44 – 147</span>
+                                </div>
+                                <div class="relative flex items-center">
+                                    <input type="number" step="0.1" inputmode="decimal" id="ALP" required placeholder="130.2" class="w-full bg-slate-50/90 rounded-lg px-3 py-2 text-base font-bold text-slate-900 focus:bg-white focus:outline-none pr-14">
+                                    <span class="absolute right-2.5 text-xs font-bold text-slate-400 pointer-events-none">IU/L</span>
+                                </div>
+                            </div>
+
+                            <!-- 5. Vitamin D -->
+                            <div class="input-card rounded-xl p-2.5">
+                                <div class="flex items-center justify-between text-xs font-semibold text-slate-700 mb-1">
+                                    <span class="flex items-center gap-1">
+                                        <svg class="w-3.5 h-3.5 text-yellow-500 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707M16 12a4 4 0 11-8 0 4 4 0 018 0z"></path></svg>
+                                        25-OH Vitamin D
+                                    </span>
+                                    <span class="text-[10px] text-slate-400">20 – 50</span>
+                                </div>
+                                <div class="relative flex items-center">
+                                    <input type="number" step="0.1" inputmode="decimal" id="VIT_D" required placeholder="18.7" class="w-full bg-slate-50/90 rounded-lg px-3 py-2 text-base font-bold text-slate-900 focus:bg-white focus:outline-none pr-14">
+                                    <span class="absolute right-2.5 text-xs font-bold text-slate-400 pointer-events-none">ng/mL</span>
+                                </div>
+                            </div>
+
+                            <!-- 6. Post-op PTH -->
+                            <div class="input-card rounded-xl p-2.5">
+                                <div class="flex items-center justify-between text-xs font-semibold text-slate-700 mb-1">
+                                    <span class="flex items-center gap-1">
+                                        <svg class="w-3.5 h-3.5 text-teal-500 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+                                        Post-op PTH
+                                    </span>
+                                    <span class="text-[10px] text-slate-400">Decline &gt; 50%</span>
+                                </div>
+                                <div class="relative flex items-center">
+                                    <input type="number" step="0.1" inputmode="decimal" id="POST_OP_PTH" required placeholder="8.5" class="w-full bg-slate-50/90 rounded-lg px-3 py-2 text-base font-bold text-slate-900 focus:bg-white focus:outline-none pr-14">
+                                    <span class="absolute right-2.5 text-xs font-bold text-slate-400 pointer-events-none">pg/mL</span>
+                                </div>
+                            </div>
+
+                            <!-- 7. Tumours Removed -->
+                            <div class="input-card rounded-xl p-2.5">
+                                <div class="flex items-center justify-between text-xs font-semibold text-slate-700 mb-1">
+                                    <span class="flex items-center gap-1">
+                                        <svg class="w-3.5 h-3.5 text-purple-500 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 20l4-16m2 16l4-16M6 9h14M4 15h14"></path></svg>
+                                        Tumours Removed
+                                    </span>
+                                    <span class="text-[10px] text-slate-400">Count</span>
+                                </div>
+                                <div class="relative flex items-center">
+                                    <input type="number" inputmode="numeric" id="NO_OF_TUMOURS" required min="1" placeholder="1" class="w-full bg-slate-50/90 rounded-lg px-3 py-2 text-base font-bold text-slate-900 focus:bg-white focus:outline-none pr-16">
+                                    <span class="absolute right-2.5 text-xs font-bold text-slate-400 pointer-events-none">tumour(s)</span>
+                                </div>
+                            </div>
+
+                            <!-- 8. Osteoporosis / BMD -->
+                            <div class="input-card rounded-xl p-2.5">
+                                <div class="flex items-center justify-between text-xs font-semibold text-slate-700 mb-1">
+                                    <span class="flex items-center gap-1">
+                                        <svg class="w-3.5 h-3.5 text-emerald-500 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path></svg>
+                                        Bone Mineral Density
+                                    </span>
+                                    <span class="text-[10px] text-slate-400">DXA Scan</span>
+                                </div>
+                                <div class="grid grid-cols-2 gap-1.5 bg-slate-100 p-1 rounded-lg">
+                                    <button type="button" id="bmd-normal-btn" onclick="selectBMD(0)" class="segment-btn active py-2 rounded text-xs font-semibold transition text-center">
+                                        Normal
+                                    </button>
+                                    <button type="button" id="bmd-osteo-btn" onclick="selectBMD(1)" class="segment-btn py-2 rounded text-xs font-semibold text-slate-700 transition text-center">
+                                        Osteoporosis
+                                    </button>
+                                </div>
+                                <input type="hidden" id="BMD_N" value="0">
+                            </div>
+
+                        </div>
+
+                        <!-- Compute Action Button (Large, mobile-touch optimized) -->
+                        <div class="pt-1">
+                            <button type="submit" class="w-full min-h-[48px] bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 active:scale-[0.98] text-white font-bold py-3 px-4 rounded-xl shadow-md shadow-blue-500/25 transition flex items-center justify-center text-sm sm:text-base font-display">
+                                <span>Calculate Risk & Triage Protocol</span>
+                                <svg class="w-4 h-4 ml-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14 5l7 7m0 0l-7 7m7-7H3"></path></svg>
+                            </button>
+                        </div>
+                    </form>
+
+                </div>
+            </div>
+
+            <!-- Right Column: Results & Clinical Triage (5 cols) -->
+            <div class="lg:col-span-5" id="results-container">
+                <div id="results-panel" class="glass-card rounded-2xl p-4 sm:p-5 flex flex-col justify-between h-full min-h-[380px] sm:min-h-[450px] relative overflow-hidden">
+                    
+                    <!-- Top Gradient Stripe -->
+                    <div id="top-stripe" class="absolute top-0 left-0 w-full h-1.5 bg-slate-300"></div>
+
+                    <!-- Initial State (Before calculation) -->
+                    <div id="empty-state" class="my-auto py-8 sm:py-10 text-center">
+                        <div class="w-14 h-14 sm:w-16 sm:h-16 bg-blue-50 text-blue-600 rounded-2xl flex items-center justify-center mx-auto mb-3 shadow-inner">
+                            <svg class="w-7 h-7 sm:w-8 sm:h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"></path></svg>
+                        </div>
+                        <h3 class="text-base font-bold text-slate-800 font-display mb-1">Awaiting Patient Assessment</h3>
+                        <p class="text-xs text-slate-500 max-w-xs mx-auto leading-relaxed">
+                            Input the 8 clinical variables or tap a preset to compute post-op hypocalcemia risk and ambulatory disposition.
+                        </p>
+                    </div>
+
+                    <!-- Active Result State (Revealed after calculation) -->
+                    <div id="active-state" class="hidden space-y-3.5 my-auto">
+                        
+                        <!-- Radial Gauge & Score -->
+                        <div class="text-center">
+                            
+                            <div class="relative w-44 h-24 sm:w-48 sm:h-26 mx-auto overflow-hidden">
+                                <svg class="w-44 h-44 sm:w-48 sm:h-48 -rotate-90 origin-center" viewBox="0 0 200 200">
+                                    <!-- Background Arc (Semicircle) -->
+                                    <circle cx="100" cy="100" r="75" fill="none" stroke="#e2e8f0" stroke-width="16" stroke-dasharray="235.6 235.6" stroke-dashoffset="0" />
+                                    <!-- Mild Zone (0 to 15%) -->
+                                    <circle cx="100" cy="100" r="75" fill="none" stroke="#10b981" stroke-width="16" stroke-dasharray="35.3 235.6" stroke-dashoffset="0" opacity="0.3" />
+                                    <!-- Mod Zone (15 to 50%) -->
+                                    <circle cx="100" cy="100" r="75" fill="none" stroke="#f59e0b" stroke-width="16" stroke-dasharray="82.5 235.6" stroke-dashoffset="-35.3" opacity="0.3" />
+                                    <!-- Severe Zone (50 to 100%) -->
+                                    <circle cx="100" cy="100" r="75" fill="none" stroke="#ef4444" stroke-width="16" stroke-dasharray="117.8 235.6" stroke-dashoffset="-117.8" opacity="0.3" />
+                                    
+                                    <!-- Dynamic Progress Arc -->
+                                    <circle id="gauge-arc" cx="100" cy="100" r="75" fill="none" stroke="#10b981" stroke-width="16" stroke-dasharray="235.6 235.6" stroke-dashoffset="235.6" stroke-linecap="round" class="transition-all duration-1000" />
+                                </svg>
+
+                                <!-- Cutoff labels -->
+                                <span class="absolute bottom-0 left-2 text-[10px] font-bold text-emerald-600">0%</span>
+                                <span class="absolute bottom-4 left-1/3 -translate-x-1/2 text-[10px] font-bold text-amber-600">15%</span>
+                                <span class="absolute bottom-4 left-2/3 -translate-x-1/2 text-[10px] font-bold text-red-600">50%</span>
+                                <span class="absolute bottom-0 right-2 text-[10px] font-bold text-red-700">100%</span>
+                            </div>
+
+                            <div class="mt-0.5">
+                                <div id="prob-display" class="text-3xl sm:text-4xl font-extrabold text-slate-900 tracking-tight font-display">0.0%</div>
+                                <span id="tier-badge" class="mt-1 px-3 py-1 rounded-full text-xs font-black uppercase tracking-wider inline-block">
+                                    --
+                                </span>
+                            </div>
+                        </div>
+
+                        <!-- Structured Action Cards -->
+                        <div class="space-y-2 text-left">
+                            
+                            <!-- 1. Discharge Timeline -->
+                            <div class="p-2.5 sm:p-3 rounded-xl bg-slate-50 border border-slate-200">
+                                <div class="flex items-center space-x-1.5 text-slate-500 mb-0.5">
+                                    <svg class="w-3.5 h-3.5 text-blue-600 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+                                    <span class="text-[10px] font-bold uppercase tracking-wider">Discharge Timeline</span>
+                                </div>
+                                <div id="rec-pathway" class="text-xs sm:text-sm font-bold text-slate-900 leading-snug">--</div>
+                            </div>
+
+                            <!-- 2. Calcium Regimen -->
+                            <div class="p-2.5 sm:p-3 rounded-xl bg-slate-50 border border-slate-200">
+                                <div class="flex items-center space-x-1.5 text-slate-500 mb-0.5">
+                                    <svg class="w-3.5 h-3.5 text-emerald-600 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19.428 15.428a2 2 0 00-1.022-.547l-2.387-.477a6 6 0 00-3.86.517l-.318.158a6 6 0 01-3.86.517L6.05 15.21a2 2 0 00-1.806.547M8 4h8l-1 1v5.172a2 2 0 00.586 1.414l5 5c1.26 1.26.367 3.414-1.415 3.414H4.828c-1.782 0-2.674-2.154-1.414-3.414l5-5A2 2 0 009 10.172V5L8 4z"></path></svg>
+                                    <span class="text-[10px] font-bold uppercase tracking-wider">Calcium Replacement Protocol</span>
+                                </div>
+                                <div id="rec-calcium" class="text-xs font-semibold text-slate-800 leading-snug">--</div>
+                            </div>
+
+                            <!-- 3. Monitoring & Telemetry -->
+                            <div class="p-2.5 sm:p-3 rounded-xl bg-slate-50 border border-slate-200">
+                                <div class="flex items-center space-x-1.5 text-slate-500 mb-0.5">
+                                    <svg class="w-3.5 h-3.5 text-purple-600 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"></path></svg>
+                                    <span class="text-[10px] font-bold uppercase tracking-wider">Vigilance & Monitoring</span>
+                                </div>
+                                <div id="rec-monitoring" class="text-xs text-slate-700 leading-snug">--</div>
+                            </div>
+
+                        </div>
+
+                        <!-- Action Bar: Print & Reset (Thumb-friendly on mobile) -->
+                        <div class="pt-1 flex items-center justify-between no-print">
+                            <button type="button" onclick="window.print()" class="min-h-[36px] px-2 py-1 text-xs font-semibold text-slate-600 hover:text-slate-900 active:text-blue-600 flex items-center gap-1.5">
+                                <svg class="w-3.5 h-3.5 text-slate-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z"></path></svg>
+                                Print Report
+                            </button>
+                            <button type="button" onclick="resetForm()" class="min-h-[36px] px-2 py-1 text-xs font-semibold text-blue-600 hover:text-blue-800 active:text-blue-900">
+                                Reset Form
+                            </button>
+                        </div>
+
+                    </div>
+
+                    <!-- Footer Stamp -->
+                    <div class="pt-2 text-[10px] text-slate-400 border-t border-slate-100 flex justify-between items-center">
+                        <span>Cutoff: 0.50</span>
+                        <span>TRIPOD Type 2b Validated</span>
+                    </div>
+
+                </div>
+            </div>
+
+        </div>
+    </main>
+
+    <!-- Study Evidence Modal -->
+    <div id="info-modal" class="hidden fixed inset-0 z-50 bg-slate-900/50 backdrop-blur-sm flex items-center justify-center p-4 no-print">
+        <div class="bg-white rounded-2xl max-w-lg w-full p-5 sm:p-6 card space-y-3.5 shadow-2xl">
+            <div class="flex items-center justify-between border-b border-slate-100 pb-2.5">
+                <h3 class="text-base font-bold text-slate-900 font-display">PrediCAL Clinical Evidence</h3>
+                <button onclick="toggleModal('info-modal')" class="text-slate-400 hover:text-slate-600 text-xl font-bold p-1">✕</button>
+            </div>
+            <div class="space-y-3 text-xs text-slate-600">
+                <p>
+                    <strong>Study Cohort:</strong> Validated across 979 consecutive PHPT cases (914 derivation cases through Dec 2025; 65 prospective temporal validation cases Jan–Aug 2026).
+                </p>
+                <div class="grid grid-cols-3 gap-2 text-center py-1">
+                    <div class="p-2 rounded-lg bg-blue-50 border border-blue-100">
+                        <div class="text-blue-700 font-bold text-sm">0.9828</div>
+                        <div class="text-[10px] text-slate-500">ROC-AUC</div>
+                    </div>
+                    <div class="p-2 rounded-lg bg-emerald-50 border border-emerald-100">
+                        <div class="text-emerald-700 font-bold text-sm">93.85%</div>
+                        <div class="text-[10px] text-slate-500">Accuracy</div>
+                    </div>
+                    <div class="p-2 rounded-lg bg-purple-50 border border-purple-100">
+                        <div class="text-purple-700 font-bold text-sm">98.21%</div>
+                        <div class="text-[10px] text-slate-500">NPV</div>
+                    </div>
+                </div>
+                <p>
+                    <strong>Day-Care Safety:</strong> 60% of prospective patients were categorized as Mild Risk with 0.00% complications (100% NPV), supporting safe fast-track discharge within 4–6 hours on oral maintenance calcium.
+                </p>
+            </div>
+            <div class="pt-2 border-t border-slate-100 flex justify-end">
+                <button onclick="toggleModal('info-modal')" class="min-h-[40px] px-4 py-2 bg-slate-900 text-white rounded-xl text-xs font-semibold hover:bg-slate-800">
+                    Close
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Footer -->
+    <footer class="max-w-6xl mx-auto w-full text-center text-[10px] sm:text-[11px] text-slate-400 py-1.5 no-print">
+        PrediCAL • Clinical Decision Support for Postoperative Calcium Requirement
+    </footer>
+
+    <!-- Client Script -->
+    <script>
+        const PRESETS = {
+            mild: {
+                CA: 12.21,
+                PHOSPHORUS: 2.34,
+                PTH: 270.4,
+                ALP: 130.2,
+                VIT_D: 18.7,
+                POST_OP_PTH: 8.5,
+                NO_OF_TUMOURS: 1,
+                BMD_N: 0
+            },
+            mod: {
+                CA: 12.45,
+                PHOSPHORUS: 2.25,
+                PTH: 383.1,
+                ALP: 162.4,
+                VIT_D: 16.0,
+                POST_OP_PTH: 9.0,
+                NO_OF_TUMOURS: 1,
+                BMD_N: 1
+            },
+            sev: {
+                CA: 11.99,
+                PHOSPHORUS: 2.10,
+                PTH: 795.2,
+                ALP: 290.9,
+                VIT_D: 13.0,
+                POST_OP_PTH: 14.5,
+                NO_OF_TUMOURS: 1,
+                BMD_N: 1
+            }
+        };
+
+        function selectBMD(val) {
+            document.getElementById('BMD_N').value = val;
+            const normBtn = document.getElementById('bmd-normal-btn');
+            const osteoBtn = document.getElementById('bmd-osteo-btn');
+            if (val === 0) {
+                normBtn.className = 'segment-btn active py-2 rounded text-xs font-semibold transition text-center';
+                osteoBtn.className = 'segment-btn py-2 rounded text-xs font-semibold text-slate-700 transition text-center';
+            } else {
+                normBtn.className = 'segment-btn py-2 rounded text-xs font-semibold text-slate-700 transition text-center';
+                osteoBtn.className = 'segment-btn active py-2 rounded text-xs font-semibold transition text-center';
+            }
+        }
+
+        function setPreset(key) {
+            const p = PRESETS[key];
+            if (!p) return;
+
+            document.getElementById('CA').value = p.CA;
+            document.getElementById('PHOSPHORUS').value = p.PHOSPHORUS;
+            document.getElementById('PTH').value = p.PTH;
+            document.getElementById('ALP').value = p.ALP;
+            document.getElementById('VIT_D').value = p.VIT_D;
+            document.getElementById('POST_OP_PTH').value = p.POST_OP_PTH;
+            document.getElementById('NO_OF_TUMOURS').value = p.NO_OF_TUMOURS;
+            selectBMD(p.BMD_N);
+
+            document.getElementById('predical-form').dispatchEvent(new Event('submit'));
+        }
+
+        function resetForm() {
+            document.getElementById('predical-form').reset();
+            selectBMD(0);
+            document.getElementById('empty-state').classList.remove('hidden');
+            document.getElementById('active-state').classList.add('hidden');
+            document.getElementById('top-stripe').className = 'absolute top-0 left-0 w-full h-1.5 bg-slate-300';
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+        }
+
+        function toggleModal(id) {
+            const m = document.getElementById(id);
+            m.classList.toggle('hidden');
+        }
+
+        document.getElementById('predical-form').addEventListener('submit', async (e) => {
+            e.preventDefault();
+
+            const payload = {
+                CA: parseFloat(document.getElementById('CA').value),
+                PHOSPHORUS: parseFloat(document.getElementById('PHOSPHORUS').value),
+                PTH: parseFloat(document.getElementById('PTH').value),
+                ALP: parseFloat(document.getElementById('ALP').value),
+                VIT_D: parseFloat(document.getElementById('VIT_D').value),
+                POST_OP_PTH: parseFloat(document.getElementById('POST_OP_PTH').value),
+                NO_OF_TUMOURS: parseInt(document.getElementById('NO_OF_TUMOURS').value),
+                BMD_N: parseInt(document.getElementById('BMD_N').value)
+            };
+
+            try {
+                const response = await fetch('/api/predict', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(payload)
+                });
+
+                if (!response.ok) throw new Error('API Calculation Error');
+                const data = await response.json();
+                renderResult(data);
+
+                // Auto-scroll to results smoothly on mobile screens (< 1024px)
+                if (window.innerWidth < 1024) {
+                    const resContainer = document.getElementById('results-container');
+                    resContainer.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                }
+
+            } catch (err) {
+                alert(err.message || 'Error running calculation');
+            }
+        });
+
+        function renderResult(data) {
+            document.getElementById('empty-state').classList.add('hidden');
+            document.getElementById('active-state').classList.remove('hidden');
+
+            const pct = data.probability_percentage;
+            const tierCode = data.tier_code;
+
+            // Animate number
+            animateNumber(0, pct, 800, (val) => {
+                document.getElementById('prob-display').innerText = `${val.toFixed(1)}%`;
+            });
+
+            // Update SVG Radial Arc
+            const arc = document.getElementById('gauge-arc');
+            const totalDash = 235.6;
+            const targetOffset = totalDash - (totalDash * (Math.min(100, pct) / 100));
+            arc.style.strokeDashoffset = targetOffset;
+
+            const topStripe = document.getElementById('top-stripe');
+            const badge = document.getElementById('tier-badge');
+
+            if (tierCode === 'MILD') {
+                arc.style.stroke = '#10b981';
+                topStripe.className = 'absolute top-0 left-0 w-full h-1.5 bg-emerald-500';
+                badge.className = 'mt-1 px-3 py-1 rounded-full text-xs font-black uppercase tracking-wider inline-block bg-emerald-50 text-emerald-700 border border-emerald-200';
+            } else if (tierCode === 'MODERATE') {
+                arc.style.stroke = '#f59e0b';
+                topStripe.className = 'absolute top-0 left-0 w-full h-1.5 bg-amber-500';
+                badge.className = 'mt-1 px-3 py-1 rounded-full text-xs font-black uppercase tracking-wider inline-block bg-amber-50 text-amber-700 border border-amber-200';
+            } else {
+                arc.style.stroke = '#ef4444';
+                topStripe.className = 'absolute top-0 left-0 w-full h-1.5 bg-red-600';
+                badge.className = 'mt-1 px-3 py-1 rounded-full text-xs font-black uppercase tracking-wider inline-block bg-red-50 text-red-700 border border-red-200';
+            }
+
+            badge.innerText = `${data.risk_tier}`;
+
+            // Recommendations
+            document.getElementById('rec-pathway').innerText = data.discharge_pathway;
+            document.getElementById('rec-calcium').innerText = data.calcium_regimen;
+            document.getElementById('rec-monitoring').innerText = data.monitoring_protocol;
+        }
+
+        function animateNumber(start, end, duration, callback) {
+            const startTime = performance.now();
+            function update(currentTime) {
+                const elapsed = currentTime - startTime;
+                const progress = Math.min(elapsed / duration, 1);
+                const currentVal = start + progress * (end - start);
+                callback(currentVal);
+                if (progress < 1) requestAnimationFrame(update);
+            }
+            requestAnimationFrame(update);
+        }
+    </script>
+</body>
+</html>

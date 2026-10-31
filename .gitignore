@@ -1,0 +1,21 @@
+# Python caches
+__pycache__/
+*.py[cod]
+*$py.class
+*.env
+.venv
+env/
+venv/
+
+# Large clinical datasets & office docs (keep repo lightweight)
+*.xlsx
+*.csv
+*.docx
+*.pptx
+*.zip
+*.log
+scratch/
+figures/
+temp_master_data.xlsx
+paper_extracted_text.txt
+paper_final_updated.txt
