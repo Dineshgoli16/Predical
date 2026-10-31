@@ -1,32 +1,29 @@
-# PrediCAL
+# PrediCAL – AI
 
-PrediCAL is a clinical decision-support web application that predicts the statistical probability of post-operative hypocalcemia using a machine learning model.
+Clinical decision-support web application for predicting postoperative hypocalcemia and Hungry Bone Syndrome in Primary Hyperparathyroidism (PHPT), guiding safe ambulatory same-day discharge versus inpatient calcium replacement.
 
 ## Tech Stack
-- **Backend**: FastAPI (Python)
-- **Machine Learning**: Scikit-Learn & XGBoost
-- **Frontend**: Vanilla HTML/JS with Tailwind CSS
+- **Backend Engine**: Flask (Python 3.8+)
+- **Production Server**: Gunicorn (WSGI)
+- **Frontend Dashboard**: Responsive, mobile-first HTML5 / Tailwind CSS
+- **Model**: Multivariable Logistic Regression (Table 1B, TRIPOD Type 2b Validated, N = 979)
 
-## Setup Instructions
+## Deployment on Render.com
 
-### 1. Install Dependencies
-Ensure you have Python 3.8+ installed. Install the required Python packages:
-```bash
-pip install -r requirements.txt
-```
+This repository is pre-configured with `render.yaml` and `Procfile` for 1-click deployment on [Render](https://render.com):
 
-### 2. Train the Machine Learning Model
-Run the training script to generate the synthetic clinical dataset, evaluate multiple models (Logistic Regression, Random Forest, XGBoost), and save the top-performing model (`model.joblib`).
-```bash
-python train_model.py
-```
-
-### 3. Start the Backend Server
-Run the FastAPI application using Uvicorn. This will serve the prediction API locally.
-```bash
-uvicorn main:app --reload
-```
-The API will be available at `http://127.0.0.1:8000`. You can also view the auto-generated Swagger documentation at `http://127.0.0.1:8000/docs`.
-
-### 4. Launch the Frontend
-Open the `index.html` file in any modern web browser to access the PrediCAL clinical dashboard. It connects automatically to the locally running FastAPI backend.
+1. **Push this repository to GitHub**:
+   ```bash
+   git remote add origin https://github.com/<your-username>/predical.git
+   git push -u origin main
+   ```
+2. **Deploy on Render**:
+   - Go to [dashboard.render.com](https://dashboard.render.com).
+   - Click **New +** -> **Web Service**.
+   - Connect your `predical` GitHub repository.
+   - Settings are detected automatically from `render.yaml`:
+     - **Runtime**: `Python 3`
+     - **Build Command**: `pip install -r requirements.txt`
+     - **Start Command**: `gunicorn main:app`
+   - Click **Deploy Web Service**.
+3. **Live URL**: Render will assign a free live HTTPS URL (e.g., `https://predical-ai.onrender.com`).
